@@ -1,0 +1,74 @@
+# =========================
+# Build directories
+# =========================
+build/
+out/
+cmake-build-*/
+
+# =========================
+# CMake generated files
+# =========================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# =========================
+# Ninja / Make
+# =========================
+.ninja_deps
+.ninja_log
+build.ninja
+
+# =========================
+# Visual Studio Code
+# =========================
+.vscode/
+*.code-workspace
+
+# =========================
+# Visual Studio (just in case)
+# =========================
+.vs/
+*.vcxproj*
+*.sln
+
+# =========================
+# Windows
+# =========================
+Thumbs.db
+desktop.ini
+
+# =========================
+# macOS
+# =========================
+.DS_Store
+
+# =========================
+# Temporary / backups
+# =========================
+*.swp
+*.swo
+*~
+*.tmp
+
+# =========================
+# Binaries
+# =========================
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.obj
+*.a
+*.lib
+
+# =========================
+# Coverage / profiling (future-proof)
+# =========================
+*.gcda
+*.gcno
+*.gcov
+coverage/

@@ -1,0 +1,1 @@
+add_example_with_libs(core)
