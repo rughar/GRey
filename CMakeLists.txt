@@ -10,50 +10,42 @@ option(GREY_BUILD_UTEST    "Build unit tests" ON)
 
 # ============================================================
 # Auto header-only libraries from source/<name>/
-# - Each direct subfolder source/<name>/ becomes target <name> (lowercased)
-# - Include root is source/ so you can: #include <poisson/poisson.hpp>
 # ============================================================
 
 set(GREY_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
-
-if(NOT EXISTS "${GREY_SOURCE_DIR}")
-  message(FATAL_ERROR "Missing required directory: source/")
-endif()
-
-file(GLOB GREY_SOURCE_CHILDREN LIST_DIRECTORIES true
-     "${GREY_SOURCE_DIR}/*")
-
 set(GREY_LIBS "")
+set(GREY_HAS_SOURCE OFF)
 
-foreach(child IN LISTS GREY_SOURCE_CHILDREN)
-  if(IS_DIRECTORY "${child}")
-    get_filename_component(lib_name "${child}" NAME)
+if(EXISTS "${GREY_SOURCE_DIR}")
+  set(GREY_HAS_SOURCE ON)
 
-    # sanitize -> valid CMake target name
-    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" lib_target "${lib_name}")
-    # normalize to lowercase to avoid Windows case traps
-    string(TOLOWER "${lib_target}" lib_target)
+  file(GLOB GREY_SOURCE_CHILDREN LIST_DIRECTORIES true
+       "${GREY_SOURCE_DIR}/*")
 
-    if(lib_target STREQUAL "")
-      message(FATAL_ERROR "Invalid source subdirectory name: '${lib_name}'")
+  foreach(child IN LISTS GREY_SOURCE_CHILDREN)
+    if(IS_DIRECTORY "${child}")
+      get_filename_component(lib_name "${child}" NAME)
+
+      string(REGEX REPLACE "[^A-Za-z0-9_]" "_" lib_target "${lib_name}")
+      string(TOLOWER "${lib_target}" lib_target)
+
+      if(lib_target STREQUAL "")
+        message(FATAL_ERROR "Invalid source subdirectory name: '${lib_name}'")
+      endif()
+
+      add_library(${lib_target} INTERFACE)
+      target_include_directories(${lib_target} INTERFACE "${GREY_SOURCE_DIR}")
+      target_compile_features(${lib_target} INTERFACE cxx_std_20)
+
+      list(APPEND GREY_LIBS ${lib_target})
     endif()
-
-    add_library(${lib_target} INTERFACE)
-    target_include_directories(${lib_target} INTERFACE "${GREY_SOURCE_DIR}")
-    target_compile_features(${lib_target} INTERFACE cxx_std_20)
-
-    list(APPEND GREY_LIBS ${lib_target})
-  endif()
-endforeach()
+  endforeach()
+else()
+  message(STATUS "Directory 'source/' not found. Auto-libraries disabled; examples will be skipped.")
+endif()
 
 # ============================================================
 # Function for examples
-# In examples/<example>/CMakeLists.txt put ONLY:
-#   add_example_with_libs(lib1 lib2 ...)
-#
-# - Builds examples/<example>/main.cpp
-# - Target name: ex_<example>
-# - Links requested libraries (names are case-insensitive; normalized to lowercase)
 # ============================================================
 
 function(add_example_with_libs)
@@ -85,9 +77,10 @@ endfunction()
 
 # ============================================================
 # Examples: auto-add every examples/<name>/ that has CMakeLists.txt
+# Only if source/ exists (otherwise they'd fail anyway)
 # ============================================================
 
-if(GREY_BUILD_EXAMPLES)
+if(GREY_BUILD_EXAMPLES AND GREY_HAS_SOURCE)
   set(GREY_EXAMPLES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/examples")
 
   if(EXISTS "${GREY_EXAMPLES_DIR}")
@@ -104,11 +97,7 @@ if(GREY_BUILD_EXAMPLES)
 endif()
 
 # ============================================================
-# Unit tests:
-# - Requires: utests/main.cpp
-# - Also compiles any utests/src/*.cpp (optional)
-# - Builds executable: grey_utests
-# - Custom target: utest (runs grey_utests)
+# Unit tests
 # ============================================================
 
 if(GREY_BUILD_UTEST)
@@ -136,7 +125,6 @@ if(GREY_BUILD_UTEST)
     "${UTESTS_SRC_DIR}"
   )
 
-  # link all auto libraries to unit tests (simple + robust)
   target_link_libraries(grey_utests PRIVATE ${GREY_LIBS})
 
   add_custom_target(utest
